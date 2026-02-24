@@ -1,0 +1,16 @@
+{
+  "name": "Memolish",
+  "short_name": "Memolish",
+  "description": "일상 메모를 영어 회화 콘텐츠로 변환",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

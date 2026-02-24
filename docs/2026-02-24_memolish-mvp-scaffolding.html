@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memolish MVP 진행 현황 — 2026-02-24</title>
+  <style>
+    :root {
+      --green:  #22c55e;
+      --yellow: #eab308;
+      --red:    #ef4444;
+      --blue:   #3b82f6;
+      --indigo: #6366f1;
+      --gray:   #6b7280;
+      --bg:     #f8fafc;
+      --card:   #ffffff;
+      --border: #e2e8f0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: #1e293b;
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+    a { color: var(--indigo); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── 레이아웃 ── */
+    .container { max-width: 960px; margin: 0 auto; }
+
+    /* ── 헤더 ── */
+    .header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .header .badge {
+      display: inline-block;
+      background: var(--indigo);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      margin-bottom: 0.75rem;
+    }
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .header .subtitle {
+      color: var(--gray);
+      margin-top: 0.4rem;
+      font-size: 0.95rem;
+    }
+
+    /* ── 섹션 타이틀 ── */
+    h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 2rem 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* ── 카드 그리드 ── */
+    .grid { display: grid; gap: 1rem; }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .card h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* ── 진행 상태 뱃지 ── */
+    .badge-done   { background:#dcfce7; color:#15803d; }
+    .badge-wip    { background:#fef9c3; color:#854d0e; }
+    .badge-todo   { background:#fee2e2; color:#b91c1c; }
+    .badge-plan   { background:#ede9fe; color:#5b21b6; }
+    .status-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    /* ── 체크리스트 ── */
+    .checklist { list-style: none; font-size: 0.88rem; }
+    .checklist li {
+      padding: 0.3rem 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .checklist li:last-child { border-bottom: none; }
+    .checklist .icon { font-size: 1rem; flex-shrink: 0; }
+
+    /* ── 진행바 ── */
+    .progress-wrap { margin: 0.5rem 0 1rem; }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--gray);
+      margin-bottom: 0.3rem;
+    }
+    .progress-bar {
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--indigo), var(--blue));
+      transition: width 0.4s ease;
+    }
+
+    /* ── 스택 테이블 ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    th {
+      background: #f1f5f9;
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      font-weight: 600;
+      color: #475569;
+    }
+    td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fafc; }
+    code {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 0.1rem 0.35rem;
+      font-size: 0.8rem;
+      font-family: 'Fira Code', Consolas, monospace;
+      color: #e11d48;
+    }
+
+    /* ── 알림 박스 ── */
+    .alert {
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+    }
+    .alert-warn  { background: #fefce8; border: 1px solid #fde047; }
+    .alert-info  { background: #eff6ff; border: 1px solid #bfdbfe; }
+    .alert-error { background: #fef2f2; border: 1px solid #fca5a5; }
+    .alert strong { display: block; margin-bottom: 0.3rem; }
+
+    /* ── 다음 작업 카드 ── */
+    .task-card {
+      border-left: 4px solid var(--indigo);
+      background: var(--card);
+      border-radius: 0 0.75rem 0.75rem 0;
+      padding: 0.9rem 1.2rem;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .task-card.urgent { border-left-color: var(--red); }
+    .task-card.medium { border-left-color: var(--yellow); }
+    .task-card.future { border-left-color: var(--gray); }
+    .task-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.3rem;
+    }
+    .task-desc { font-size: 0.83rem; color: #475569; }
+    .task-meta {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+    .tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+    .tag.be  { background: #dcfce7; color: #166534; }
+    .tag.fe  { background: #fce7f3; color: #9d174d; }
+    .tag.ops { background: #fef3c7; color: #92400e; }
+    .tag.bug { background: #fee2e2; color: #991b1b; }
+    .tag.v2  { background: #f3f4f6; color: #6b7280; }
+
+    /* ── 아키텍처 흐름 다이어그램 ── */
+    .flow {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      font-size: 0.82rem;
+      margin: 0.75rem 0;
+    }
+    .flow-node {
+      background: #e0e7ff;
+      color: #3730a3;
+      border-radius: 0.5rem;
+      padding: 0.3rem 0.7rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .flow-arrow { color: var(--gray); font-size: 1rem; }
+
+    /* ── 푸터 ── */
+    .footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ▶ 헤더 -->
+  <div class="header">
+    <div class="badge">2026-02-24</div>
+    <h1>✨ Memolish MVP 진행 현황</h1>
+    <p class="subtitle">일상 메모 → 초개인화 영어 학습 콘텐츠 변환 서비스 · Phase 1 스캐폴딩 완료</p>
+  </div>
+
+  <!-- ▶ 전체 진행률 -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <h3>📊 전체 개발 진행률</h3>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Phase 1 — 스캐폴딩</span><span>100%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Phase 2 — 실제 API 연동</span><span>0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Phase 3 — UI 완성도 & 테스트</span><span>0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Phase 4 — 배포 & v2 기능</span><span>0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- ▶ 기술 스택 -->
+  <h2>🛠 확정 기술 스택</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>레이어</th><th>기술</th><th>상태</th><th>비고</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Frontend</strong></td>
+          <td>Next.js 14 · Tailwind CSS · Zustand</td>
+          <td><span class="status-badge badge-done">✅ 구조 완료</span></td>
+          <td>App Router, 모바일 우선</td>
+        </tr>
+        <tr>
+          <td><strong>Backend</strong></td>
+          <td>FastAPI · SQLAlchemy · psycopg2</td>
+          <td><span class="status-badge badge-done">✅ 구조 완료</span></td>
+          <td>CORS 설정, lifespan 훅</td>
+        </tr>
+        <tr>
+          <td><strong>DB</strong></td>
+          <td>PostgreSQL</td>
+          <td><span class="status-badge badge-wip">⚠️ 미생성</span></td>
+          <td><code>createdb memolish_db</code> 필요</td>
+        </tr>
+        <tr>
+          <td><strong>AI</strong></td>
+          <td>Google Gemini 1.5 Flash</td>
+          <td><span class="status-badge badge-wip">⚠️ 키 미설정</span></td>
+          <td>서비스 코드 완성, API 키 필요</td>
+        </tr>
+        <tr>
+          <td><strong>TTS</strong></td>
+          <td>Google Cloud TTS (Journey A/B)</td>
+          <td><span class="status-badge badge-wip">⚠️ 키 미설정</span></td>
+          <td>서비스 코드 완성, 자격증명 필요</td>
+        </tr>
+        <tr>
+          <td><strong>Storage</strong></td>
+          <td>AWS S3 + presigned URL</td>
+          <td><span class="status-badge badge-wip">⚠️ 키 미설정</span></td>
+          <td>서비스 코드 완성, 버킷 생성 필요</td>
+        </tr>
+        <tr>
+          <td><strong>Auth</strong></td>
+          <td>브라우저 UUID 세션 헤더 <code>X-Session-Id</code></td>
+          <td><span class="status-badge badge-done">✅ 완료 (MVP)</span></td>
+          <td>v2에서 JWT로 전환 예정</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ▶ 서비스 아키텍처 흐름 -->
+  <h2>🔀 핵심 데이터 흐름</h2>
+  <div class="card">
+    <p style="font-size:0.85rem;color:#475569;margin-bottom:0.75rem;"><strong>Track 1 — 생산성 (메모 CRUD)</strong></p>
+    <div class="flow">
+      <span class="flow-node">사용자 입력</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">MemoInputPanel</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">POST /api/memos</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">PostgreSQL</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">MemoBoard 업데이트</span>
+    </div>
+    <p style="font-size:0.85rem;color:#475569;margin:0.75rem 0;"><strong>Track 2 — 학습 (AI 변환, 수동 트리거만)</strong></p>
+    <div class="flow">
+      <span class="flow-node">[✨ 영어로 변환하기]</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">POST /api/ai/transform/{id}</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">크레딧 확인</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">Gemini API</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">DB 저장(캐시)</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">LearningModal</span>
+    </div>
+    <div class="flow">
+      <span class="flow-node">[🔊 오디오 듣기]</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">POST /api/audio/generate/{id}</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">Google TTS</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">S3 업로드</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">presigned URL 반환</span>
+    </div>
+  </div>
+
+  <!-- ▶ 백엔드 완료 현황 -->
+  <h2>⚙️ 백엔드 (FastAPI) 완료 현황</h2>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>📂 라우터 · API 엔드포인트</h3>
+      <ul class="checklist">
+        <li><span class="icon">✅</span><span><code>GET /health</code> — 헬스체크</span></li>
+        <li><span class="icon">✅</span><span><code>POST /api/memos</code> — 메모 생성</span></li>
+        <li><span class="icon">✅</span><span><code>GET /api/memos</code> — 목록 조회 (최신순)</span></li>
+        <li><span class="icon">✅</span><span><code>GET /api/memos/{id}</code> — 단건 조회</span></li>
+        <li><span class="icon">✅</span><span><code>PUT /api/memos/{id}</code> — 내용 수정</span></li>
+        <li><span class="icon">✅</span><span><code>DELETE /api/memos/{id}</code> — 삭제</span></li>
+        <li><span class="icon">✅</span><span><code>PATCH /api/memos/{id}/status</code> — 상태 변경</span></li>
+        <li><span class="icon">✅</span><span><code>POST /api/memos/{id}/parse-url</code> — URL 파싱</span></li>
+        <li><span class="icon">✅</span><span><code>POST /api/ai/transform/{id}</code> — AI 변환</span></li>
+        <li><span class="icon">✅</span><span><code>GET /api/ai/credits</code> — 크레딧 조회</span></li>
+        <li><span class="icon">✅</span><span><code>POST /api/audio/generate/{id}</code> — TTS 생성</span></li>
+        <li><span class="icon">✅</span><span><code>GET /api/audio/download/{id}</code> — 다운로드 URL</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🗂 모델 · 서비스</h3>
+      <ul class="checklist">
+        <li><span class="icon">✅</span><span><code>Memo</code> ORM 모델 — 상태/날짜/AI결과/S3키</span></li>
+        <li><span class="icon">✅</span><span><code>User</code> ORM 모델 — 크레딧/프리미엄/리셋날짜</span></li>
+        <li><span class="icon">✅</span><span><code>gemini_service.py</code> — Gemini API lazy import</span></li>
+        <li><span class="icon">✅</span><span><code>tts_service.py</code> — Journey A/B 음성 합성</span></li>
+        <li><span class="icon">✅</span><span><code>s3_service.py</code> — 업로드 + presigned URL</span></li>
+        <li><span class="icon">✅</span><span><code>url_parser_service.py</code> — 웹/YouTube 파싱</span></li>
+        <li><span class="icon">✅</span><span>크레딧 자정 리셋 로직</span></li>
+        <li><span class="icon">✅</span><span>DB 캐시 — 이미 변환된 메모 재변환 방지</span></li>
+        <li><span class="icon">✅</span><span>CORS, Windows UTF-8, 로깅 설정</span></li>
+        <li><span class="icon">⚠️</span><span>외부 패키지 <code>requirements.txt</code> 미포함</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ▶ 프론트엔드 완료 현황 -->
+  <h2>🎨 프론트엔드 (Next.js 14) 완료 현황</h2>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>🧩 컴포넌트</h3>
+      <ul class="checklist">
+        <li><span class="icon">✅</span><span><code>MemoBoard</code> — 상태 필터 탭 + 리스트</span></li>
+        <li><span class="icon">✅</span><span><code>MemoCard</code> — 상태 변경 드롭다운 + 삭제</span></li>
+        <li><span class="icon">✅</span><span><code>MemoInputPanel</code> — 바텀 시트 + URL 입력</span></li>
+        <li><span class="icon">✅</span><span><code>LearningModal</code> — 요약 + 대화문 + 오디오</span></li>
+        <li><span class="icon">✅</span><span><code>CreditBadge</code> — 헤더 크레딧 표시</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>📦 상태 관리 · API</h3>
+      <ul class="checklist">
+        <li><span class="icon">✅</span><span>Zustand 스토어 — 메모 CRUD + AI + 오디오 + UI</span></li>
+        <li><span class="icon">✅</span><span><code>api.ts</code> — Axios 클라이언트 + 세션 헤더</span></li>
+        <li><span class="icon">✅</span><span><code>memo.ts</code> — TypeScript 공유 타입</span></li>
+        <li><span class="icon">✅</span><span>크레딧 소진 UI (광고/프리미엄 플레이스홀더)</span></li>
+        <li><span class="icon">✅</span><span>오디오 스트리밍 + 다운로드 트리거</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ▶ 버그/주의사항 -->
+  <h2>🚨 발견된 이슈 · 주의사항</h2>
+
+  <div class="alert alert-error">
+    <strong>🔴 [BUG] LearningModal 수동 원칙 위반</strong>
+    <code>frontend/src/components/LearningModal.tsx:30</code><br/>
+    <code>useEffect(() =&gt; { transformMemo(memoId); }, [memoId])</code><br/>
+    모달이 열리는 즉시 AI 변환을 자동 호출합니다. 설계 원칙(수동 트리거만)에 위반됩니다.
+    이미 변환된 메모라면 캐시 반환이므로 API 비용은 없지만, <strong>미변환 메모를 열 경우
+    크레딧이 자동 차감</strong>됩니다. 반드시 수정 필요.
+  </div>
+
+  <div class="alert alert-warn">
+    <strong>⚠️ 외부 패키지가 requirements.txt에 미포함</strong>
+    <code>google-generativeai</code>, <code>google-cloud-texttospeech</code>, <code>boto3</code>
+    는 주석 처리되어 있습니다. 실제 연동 전 설치 및 <code>requirements.txt</code> 반영 필요.
+  </div>
+
+  <div class="alert alert-warn">
+    <strong>⚠️ PostgreSQL DB 미생성</strong>
+    로컬에서 <code>createdb memolish_db</code> 후 <code>.env</code> 파일의
+    <code>DATABASE_URL</code>을 설정해야 백엔드가 정상 기동됩니다.
+  </div>
+
+  <div class="alert alert-info">
+    <strong>ℹ️ MVP 광고/프리미엄은 플레이스홀더</strong>
+    크레딧 소진 시 광고/프리미엄 버튼은 현재 <code>alert('예정')</code>으로 처리됩니다.
+    실제 광고 SDK 및 결제 연동은 v2 작업입니다.
+  </div>
+
+  <!-- ▶ 다음 작업 추천 -->
+  <h2>🗺 다음 작업 추천 (우선순위 순)</h2>
+
+  <!-- 즉시 -->
+  <p style="font-weight:700;margin-bottom:0.5rem;color:#b91c1c;">🔴 즉시 처리 (환경 셋업)</p>
+
+  <div class="task-card urgent">
+    <div class="task-title">#1 &nbsp;PostgreSQL DB 생성 및 .env 설정</div>
+    <div class="task-desc">
+      <code>createdb memolish_db</code> 실행 후 <code>backend/.env</code>에
+      DATABASE_URL / GEMINI_API_KEY / GOOGLE_APPLICATION_CREDENTIALS / AWS 키를 입력합니다.
+    </div>
+    <div class="task-meta">
+      <span class="tag be">Backend</span>
+      <span class="tag ops">환경설정</span>
+    </div>
+  </div>
+
+  <div class="task-card urgent">
+    <div class="task-title">#2 &nbsp;외부 패키지 설치 및 requirements.txt 정리</div>
+    <div class="task-desc">
+      <code>pip install google-generativeai google-cloud-texttospeech boto3 yt-dlp</code>를 실행하고
+      <code>requirements.txt</code>에 버전과 함께 추가합니다.
+    </div>
+    <div class="task-meta">
+      <span class="tag be">Backend</span>
+      <span class="tag ops">의존성</span>
+    </div>
+  </div>
+
+  <div class="task-card urgent">
+    <div class="task-title">#3 &nbsp;백엔드 + 프론트엔드 로컬 실행 검증</div>
+    <div class="task-desc">
+      <code>uvicorn app.main:app --reload --port 8000</code> 후 <code>/health</code> · <code>/docs</code> 확인,
+      <code>npm run dev</code> 후 화면 렌더링 확인. 두 서버 연동 E2E를 처음으로 검증합니다.
+    </div>
+    <div class="task-meta">
+      <span class="tag be">Backend</span>
+      <span class="tag fe">Frontend</span>
+      <span class="tag ops">실행검증</span>
+    </div>
+  </div>
+
+  <!-- 중요 -->
+  <p style="font-weight:700;margin:1.2rem 0 0.5rem;color:#b45309;">🟡 중요 버그 수정</p>
+
+  <div class="task-card medium">
+    <div class="task-title">#4 &nbsp;[BUG FIX] LearningModal 수동 트리거 복원</div>
+    <div class="task-desc">
+      <code>useEffect</code>에서 자동 <code>transformMemo()</code> 호출 제거.
+      미변환 메모: [✨ 영어로 변환하기] 버튼 표시 → 클릭 시 변환.
+      이미 변환된 메모: 캐시 결과를 곧바로 로드하여 표시.
+    </div>
+    <div class="task-meta">
+      <span class="tag fe">Frontend</span>
+      <span class="tag bug">BUG</span>
+    </div>
+  </div>
+
+  <!-- 다음 단계 -->
+  <p style="font-weight:700;margin:1.2rem 0 0.5rem;color:#1d4ed8;">🔵 다음 단계 (API 실제 연동)</p>
+
+  <div class="task-card">
+    <div class="task-title">#5 &nbsp;Gemini API E2E 테스트</div>
+    <div class="task-desc">
+      실제 API 키 설정 후 <code>POST /api/ai/transform/{id}</code>를 호출하여
+      JSON 응답 구조(summary_ko, summary_en, dialogue.exchanges)를 검증합니다.
+      에러 응답 시 502 핸들링도 확인합니다.
+    </div>
+    <div class="task-meta">
+      <span class="tag be">Backend</span>
+      <span class="tag">AI</span>
+    </div>
+  </div>
+
+  <div class="task-card">
+    <div class="task-title">#6 &nbsp;TTS → S3 파이프라인 E2E 테스트</div>
+    <div class="task-desc">
+      <code>POST /api/audio/generate/{id}</code> 호출 시 Google TTS → MP3 bytes → S3 upload →
+      presigned URL 반환까지 전체 흐름 검증. 프론트에서 <code>&lt;audio&gt;</code> 스트리밍 확인.
+    </div>
+    <div class="task-meta">
+      <span class="tag be">Backend</span>
+      <span class="tag fe">Frontend</span>
+      <span class="tag">TTS</span>
+      <span class="tag ops">AWS S3</span>
+    </div>
+  </div>
+
+  <div class="task-card">
+    <div class="task-title">#7 &nbsp;URL 파서 고도화 — YouTube oEmbed + OGP</div>
+    <div class="task-desc">
+      현재 <code>url_parser_service.py</code>는 기본 HTTP 파싱.
+      YouTube URL은 oEmbed API (<code>youtube.com/oembed</code>)로 제목/썸네일 추출,
+      일반 URL은 OGP (og:title, og:description) 파싱으로 개선합니다.
+    </div>
+    <div class="task-meta">
+      <span class="tag be">Backend</span>
+    </div>
+  </div>
+
+  <div class="task-card">
+    <div class="task-title">#8 &nbsp;MemoInputPanel URL 실시간 미리보기</div>
+    <div class="task-desc">
+      URL 필드 blur 이벤트 시 <code>POST /api/memos/{id}/parse-url</code>을 호출하여
+      파비콘 + 제목 미리보기를 인라인으로 표시합니다. 사용자 입력 경험 향상.
+    </div>
+    <div class="task-meta">
+      <span class="tag fe">Frontend</span>
+    </div>
+  </div>
+
+  <!-- v2 -->
+  <p style="font-weight:700;margin:1.2rem 0 0.5rem;color:#6b7280;">⚪ v2 계획 (수익화)</p>
+
+  <div class="task-card future">
+    <div class="task-title">#9 &nbsp;보상형 광고 SDK 연동 (AdMob / AppLovin)</div>
+    <div class="task-desc">
+      크레딧 소진 시 현재 <code>alert('예정')</code>으로 처리된 광고 버튼에 실제 광고 SDK 연동.
+      광고 시청 완료 콜백 → 서버에 크레딧 +1 지급 API 구현.
+    </div>
+    <div class="task-meta">
+      <span class="tag v2">v2</span>
+      <span class="tag fe">Frontend</span>
+      <span class="tag be">Backend</span>
+    </div>
+  </div>
+
+  <div class="task-card future">
+    <div class="task-title">#10 &nbsp;프리미엄 결제 (Stripe 또는 인앱결제)</div>
+    <div class="task-desc">
+      <code>User.is_premium</code> 플래그가 이미 DB에 존재합니다. Stripe Checkout 또는
+      PWA → 앱스토어 인앱결제로 프리미엄 전환 흐름 구현.
+    </div>
+    <div class="task-meta">
+      <span class="tag v2">v2</span>
+      <span class="tag ops">결제</span>
+    </div>
+  </div>
+
+  <div class="task-card future">
+    <div class="task-title">#11 &nbsp;Docker Compose 컨테이너화 및 배포</div>
+    <div class="task-desc">
+      <code>docker-compose.yml</code>로 FastAPI + PostgreSQL + Next.js를 한 번에 기동.
+      Railway / Render / AWS ECS 중 하나로 프로덕션 배포.
+    </div>
+    <div class="task-meta">
+      <span class="tag v2">v2</span>
+      <span class="tag ops">배포</span>
+    </div>
+  </div>
+
+  <!-- ▶ 파일 구조 요약 -->
+  <h2>📁 현재 파일 구조</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>경로</th><th>역할</th><th>상태</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>backend/app/main.py</code></td><td>FastAPI 앱 진입점, 라우터 등록</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>backend/app/config.py</code></td><td>pydantic-settings 환경변수</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>backend/app/database.py</code></td><td>SQLAlchemy 세션/Base</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>backend/app/models/memo.py</code></td><td>Memo ORM (상태·AI결과·S3키)</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>backend/app/models/user.py</code></td><td>User ORM (크레딧·프리미엄)</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>backend/app/routers/memos.py</code></td><td>메모 CRUD 7개 엔드포인트</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>backend/app/routers/ai.py</code></td><td>AI 변환 + 크레딧 관리</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>backend/app/routers/audio.py</code></td><td>TTS 생성 + 다운로드 URL</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>backend/app/services/gemini_service.py</code></td><td>Gemini 1.5 Flash 연동</td><td><span class="status-badge badge-wip">⚠️ 키 필요</span></td></tr>
+        <tr><td><code>backend/app/services/tts_service.py</code></td><td>Journey A/B 음성 합성</td><td><span class="status-badge badge-wip">⚠️ 키 필요</span></td></tr>
+        <tr><td><code>backend/app/services/s3_service.py</code></td><td>S3 업로드 + presigned URL</td><td><span class="status-badge badge-wip">⚠️ 키 필요</span></td></tr>
+        <tr><td><code>backend/app/services/url_parser_service.py</code></td><td>YouTube/웹 메타데이터 파싱</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>frontend/src/store/memoStore.ts</code></td><td>Zustand 전역 상태 + 액션</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>frontend/src/lib/api.ts</code></td><td>Axios API 클라이언트</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>frontend/src/types/memo.ts</code></td><td>TypeScript 공유 타입</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>frontend/src/components/MemoBoard.tsx</code></td><td>보드 레이아웃 + 필터 탭</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>frontend/src/components/MemoCard.tsx</code></td><td>메모 카드 + 상태 변경</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>frontend/src/components/MemoInputPanel.tsx</code></td><td>바텀 시트 입력 폼</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>frontend/src/components/LearningModal.tsx</code></td><td>AI 학습 모달</td><td><span class="status-badge badge-todo">🔴 버그 수정 필요</span></td></tr>
+        <tr><td><code>frontend/src/components/CreditBadge.tsx</code></td><td>헤더 크레딧 뱃지</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>prompts/gemini_system_prompt.md</code></td><td>Gemini 시스템 프롬프트</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>docs/wireframes.md</code></td><td>ASCII 와이어프레임</td><td><span class="status-badge badge-done">✅</span></td></tr>
+        <tr><td><code>docs/integration_guide.md</code></td><td>통합 연결 가이드</td><td><span class="status-badge badge-done">✅</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ▶ 크레딧 시스템 요약 -->
+  <h2>💳 크레딧 시스템 설계 (구현 완료)</h2>
+  <div class="grid grid-3">
+    <div class="card" style="border-top:3px solid var(--blue);">
+      <h3>🆓 무료 사용자</h3>
+      <ul class="checklist">
+        <li><span class="icon">✅</span><span>하루 3회 AI 변환</span></li>
+        <li><span class="icon">✅</span><span>자정에 자동 리셋</span></li>
+        <li><span class="icon">⏳</span><span>광고 시청 → +1회 (v2)</span></li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:3px solid var(--yellow);">
+      <h3>💎 프리미엄</h3>
+      <ul class="checklist">
+        <li><span class="icon">✅</span><span><code>is_premium</code> 플래그 DB 존재</span></li>
+        <li><span class="icon">✅</span><span>무제한 변환 로직 구현</span></li>
+        <li><span class="icon">⏳</span><span>결제 연동 (v2)</span></li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:3px solid var(--green);">
+      <h3>🔒 API 보호 원칙</h3>
+      <ul class="checklist">
+        <li><span class="icon">✅</span><span>수동 트리거만 AI 호출</span></li>
+        <li><span class="icon">✅</span><span>변환 결과 DB 캐시</span></li>
+        <li><span class="icon">🔴</span><span>LearningModal 버그 수정 필요</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ▶ 푸터 -->
+  <div class="footer">
+    <p>Memolish MVP 진행 현황 문서 · 생성일: <strong>2026-02-24</strong></p>
+    <p style="margin-top:0.3rem;">Phase 1 (스캐폴딩) 완료 · Phase 2 (API 실제 연동) 착수 예정</p>
+  </div>
+
+</div>
+</body>
+</html>
