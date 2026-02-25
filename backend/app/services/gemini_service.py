@@ -4,8 +4,9 @@ import os
 import certifi
 
 # Windows SSL 인증서 경로 강제 설정 — google.genai 임포트 전에 반드시 먼저 설정
-os.environ.setdefault("SSL_CERT_FILE", certifi.where())
-os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
+# setdefault 대신 강제 덮어쓰기: 타 프로젝트(ComfyUI 등)의 전역 SSL_CERT_FILE이 남아있을 수 있음
+os.environ["SSL_CERT_FILE"] = certifi.where()
+os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
 
 from google import genai
 from google.genai import types

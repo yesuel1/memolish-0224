@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: memolish-api
+    env: python
+    region: singapore   # 한국에서 가장 가까운 Render 리전
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false            # Render 대시보드에서 직접 입력 (Supabase URL)
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false            # 예: https://memolish.pages.dev
+      - key: DAILY_FREE_CREDITS
+        value: "3"
