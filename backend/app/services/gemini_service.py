@@ -1,5 +1,14 @@
 import logging
 import json
+import os
+import certifi
+
+# Windows SSL 인증서 경로 강제 설정 — google.genai 임포트 전에 반드시 먼저 설정
+os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
+
+from google import genai
+from google.genai import types
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -35,34 +44,21 @@ You MUST return ONLY a valid JSON object — no markdown, no explanation text, n
 
 
 async def transform_memo_with_gemini(source_text: str) -> dict:
-    """
-    메모 텍스트를 Gemini API로 변환. 수동 트리거 전용.
-    google-generativeai 패키지가 설치되지 않은 경우 ImportError 발생.
-    """
+    """메모 텍스트를 Gemini API로 변환. 수동 트리거 전용."""
     if not settings.gemini_api_key:
         raise RuntimeError("GEMINI_API_KEY가 설정되지 않았습니다. .env 파일을 확인하세요.")
 
-    try:
-        import google.generativeai as genai  # lazy import
-    except ImportError:
-        raise RuntimeError(
-            "google-generativeai 패키지가 설치되지 않았습니다.\n"
-            "pip install google-generativeai 를 실행하세요."
-        )
-
-    genai.configure(api_key=settings.gemini_api_key)
-    model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        system_instruction=SYSTEM_PROMPT,
-    )
+    client = genai.Client(api_key=settings.gemini_api_key)
     user_prompt = (
         "다음 메모를 분석하고 영어 학습 콘텐츠로 변환해 주세요."
         " 반드시 유효한 JSON만 반환하고 다른 텍스트는 포함하지 마세요.\n\n"
         f"---\n{source_text}\n---"
     )
-    response = model.generate_content(
-        user_prompt,
-        generation_config=genai.types.GenerationConfig(
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=user_prompt,
+        config=types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT,
             temperature=0.7,
             response_mime_type="application/json",
         ),
