@@ -2,7 +2,12 @@ import NextAuth from 'next-auth';
 import Kakao from 'next-auth/providers/kakao';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [Kakao],
+  providers: [
+    Kakao({
+      clientId: process.env.AUTH_KAKAO_CLIENT_ID!,
+      clientSecret: process.env.AUTH_KAKAO_CLIENT_SECRET!,
+    }),
+  ],
   callbacks: {
     // JWT에 유저 고유 ID(sub) 유지
     jwt({ token }) {

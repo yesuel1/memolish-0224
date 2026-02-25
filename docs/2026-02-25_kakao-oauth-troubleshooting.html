@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kakao OAuth 로그인 트러블슈팅 — Memolish (2026-02-25)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.7; }
+    .container { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+    h1 { font-size: 1.9rem; font-weight: 800; color: #1e293b; margin-bottom: 8px; }
+    .subtitle { color: #64748b; font-size: 0.95rem; margin-bottom: 40px; }
+
+    h2 { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin: 36px 0 12px; border-left: 4px solid #6366f1; padding-left: 12px; }
+    h3 { font-size: 1rem; font-weight: 700; color: #475569; margin: 20px 0 8px; }
+
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; }
+
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-bottom: 6px; }
+    .badge-red   { background: #fee2e2; color: #dc2626; }
+    .badge-green { background: #dcfce7; color: #16a34a; }
+    .badge-yellow{ background: #fef9c3; color: #ca8a04; }
+
+    .error-title { font-weight: 700; color: #dc2626; font-size: 1rem; margin-bottom: 6px; }
+    .cause  { background: #fff7ed; border-left: 3px solid #f97316; padding: 10px 14px; border-radius: 6px; margin: 8px 0; font-size: 0.9rem; }
+    .fix    { background: #f0fdf4; border-left: 3px solid #22c55e; padding: 10px 14px; border-radius: 6px; margin: 8px 0; font-size: 0.9rem; }
+
+    code { background: #f1f5f9; color: #7c3aed; padding: 1px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 0.88rem; }
+    pre  { background: #1e293b; color: #e2e8f0; padding: 16px 20px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.6; margin: 8px 0; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th { background: #f1f5f9; text-align: left; padding: 10px 14px; font-weight: 700; border-bottom: 2px solid #e2e8f0; }
+    td { padding: 9px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+
+    .timeline { list-style: none; position: relative; }
+    .timeline::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; }
+    .timeline li { padding-left: 32px; position: relative; margin-bottom: 14px; }
+    .timeline li::before { content: ''; position: absolute; left: 4px; top: 6px; width: 14px; height: 14px; border-radius: 50%; background: #6366f1; border: 2px solid #fff; box-shadow: 0 0 0 2px #6366f1; }
+    .timeline .step-label { font-weight: 700; color: #6366f1; font-size: 0.85rem; }
+    .timeline .step-desc  { color: #475569; font-size: 0.88rem; }
+
+    .checklist { list-style: none; }
+    .checklist li { padding: 6px 0 6px 28px; position: relative; font-size: 0.9rem; }
+    .checklist li::before { content: '✅'; position: absolute; left: 0; }
+    .checklist li.warn::before { content: '⚠️'; }
+    .checklist li.key::before  { content: '🔑'; }
+
+    footer { margin-top: 48px; border-top: 1px solid #e2e8f0; padding-top: 20px; color: #94a3b8; font-size: 0.82rem; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Kakao OAuth 로그인 트러블슈팅</h1>
+  <p class="subtitle">Memolish 프로젝트 · 2026-02-25 · NextAuth.js v5 + Kakao Provider</p>
+
+  <!-- 요약 -->
+  <h2>한눈에 보는 원인과 해결</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>#</th><th>증상</th><th>실제 원인</th><th>해결</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><span class="badge badge-red">KOE101</span> 앱 관리자 설정 오류</td>
+          <td>.env.local의 <code>AUTH_KAKAO_CLIENT_ID</code> 값이 비어있음</td>
+          <td>.env.local에 REST API 키 직접 입력</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><span class="badge badge-red">KOE101</span> 반복</td>
+          <td>카카오 콘솔 동의항목 미설정 (닉네임 없음)</td>
+          <td>카카오 콘솔 → 동의항목 → 닉네임 필수동의 ON</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><span class="badge badge-red">KOE101</span> 반복</td>
+          <td>Redirect URI를 잘못된 위치(로그아웃 URI)에 등록</td>
+          <td>카카오 로그인 → 일반 탭에서 Redirect URI 등록</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><code>clientSecret must be a string</code></td>
+          <td>.env.local의 <code>AUTH_KAKAO_CLIENT_SECRET</code> 값이 비어있음</td>
+          <td>.env.local에 Client Secret 값 입력</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>메모 불러오기 실패</td>
+          <td>백엔드 미실행 + PostgreSQL 미설치</td>
+          <td>DATABASE_URL을 SQLite로 변경 후 uvicorn 실행</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>npm install 피어 의존성 오류</td>
+          <td>next-auth@beta가 eslint v10 요구, 프로젝트는 v8</td>
+          <td><code>--legacy-peer-deps</code> 로 설치 후 eslint 업그레이드</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>Hydration mismatch 경고</td>
+          <td>브라우저 확장 프로그램이 DOM 수정</td>
+          <td><code>suppressHydrationWarning</code> body에 추가</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 핵심 원인 -->
+  <h2>핵심 실수 1 — .env 파일 혼동</h2>
+  <div class="card">
+    <div class="badge badge-red">가장 많은 시간을 낭비한 원인</div>
+    <p class="error-title">증상: 키를 분명히 입력했는데 KOE101이 계속 발생</p>
+    <div class="cause">
+      <strong>원인:</strong> <code>backend/.env</code> 파일에 키를 입력했지만,
+      Next.js가 읽는 파일은 <code>frontend/.env.local</code>입니다.
+      두 파일이 완전히 다른 파일이며, 이름도 다릅니다.
+    </div>
+    <div class="fix">
+      <strong>해결:</strong> Next.js 환경변수는 반드시 <code>frontend/.env.local</code>에 작성해야 합니다.
+    </div>
+    <h3>올바른 파일 구조</h3>
+    <pre>memolish_260223/
+├── backend/
+│   └── .env          ← FastAPI 서버 전용 (DB URL, Gemini API Key 등)
+└── frontend/
+    └── .env.local     ← Next.js 전용 (AUTH_SECRET, AUTH_KAKAO_* 등)</pre>
+    <h3>frontend/.env.local 최종 내용</h3>
+    <pre>NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+NEXTAUTH_URL=http://localhost:3000
+
+# NextAuth
+AUTH_SECRET=9541b6c9d69b0e798e9d179a9a9f51aaa79682f3b1a7ac5a6b4b9456d0aeec52
+
+# Kakao OAuth
+AUTH_KAKAO_CLIENT_ID=&lt;카카오 REST API 키&gt;
+AUTH_KAKAO_CLIENT_SECRET=&lt;카카오 Client Secret&gt;</pre>
+  </div>
+
+  <!-- 핵심 원인 2 -->
+  <h2>핵심 실수 2 — 카카오 콘솔 설정 위치 혼동</h2>
+  <div class="card">
+    <p class="error-title">증상: Redirect URI를 등록했는데 KOE101이 계속 발생</p>
+    <div class="cause">
+      <strong>원인:</strong> 카카오 콘솔 UI가 개편되어 Redirect URI 등록 위치가 바뀌었습니다.
+      "로그아웃 Redirect URI" 칸에 잘못 입력했습니다.
+    </div>
+    <div class="fix">
+      <strong>올바른 위치:</strong> 카카오 디벨로퍼 → 내 애플리케이션 → <strong>카카오 로그인</strong> 메뉴 → <strong>일반</strong> 탭 → Redirect URI
+    </div>
+    <h3>체크리스트</h3>
+    <ul class="checklist">
+      <li>카카오 로그인 활성화: <strong>ON</strong></li>
+      <li>Redirect URI 등록: <code>http://localhost:3000/api/auth/callback/kakao</code></li>
+      <li class="warn">로그아웃 Redirect URI와 혼동 금지 (다른 칸)</li>
+      <li>동의항목 → 닉네임: <strong>필수동의</strong></li>
+      <li class="key">보안 → Client Secret: 값 복사 후 .env.local에 입력</li>
+    </ul>
+  </div>
+
+  <!-- 디버깅 타임라인 -->
+  <h2>디버깅 타임라인</h2>
+  <div class="card">
+    <ul class="timeline">
+      <li>
+        <span class="step-label">Step 1</span>
+        <span class="step-desc">npm install next-auth@beta → peer deps 충돌 → <code>--legacy-peer-deps</code> 사용</span>
+      </li>
+      <li>
+        <span class="step-label">Step 2</span>
+        <span class="step-desc">npx auth secret → better-auth 패키지가 실행됨 → AUTH_SECRET 수동 생성</span>
+      </li>
+      <li>
+        <span class="step-label">Step 3</span>
+        <span class="step-desc">카카오 로그인 버튼 클릭 → KOE101 발생</span>
+      </li>
+      <li>
+        <span class="step-label">Step 4</span>
+        <span class="step-desc">카카오 콘솔 확인: 활성화 ON, 동의항목 미설정 → 닉네임 필수동의 추가</span>
+      </li>
+      <li>
+        <span class="step-label">Step 5</span>
+        <span class="step-desc">Redirect URI를 로그아웃 칸에 잘못 등록 → 올바른 위치(일반 탭)에 재등록</span>
+      </li>
+      <li>
+        <span class="step-label">Step 6</span>
+        <span class="step-desc">.env.local 파일 확인 → AUTH_KAKAO_CLIENT_ID, AUTH_KAKAO_CLIENT_SECRET 모두 빈 값 발견</span>
+      </li>
+      <li>
+        <span class="step-label">Step 7 ✅</span>
+        <span class="step-desc">.env.local에 정확한 값 입력 + NEXTAUTH_URL 추가 → 로그인 성공</span>
+      </li>
+      <li>
+        <span class="step-label">Step 8</span>
+        <span class="step-desc">로그인 성공 후 메모 불러오기 실패 → 백엔드 미실행</span>
+      </li>
+      <li>
+        <span class="step-label">Step 9 ✅</span>
+        <span class="step-desc">backend/.env의 DATABASE_URL을 SQLite로 변경 → uvicorn 실행 → 메모 정상 로드</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- 백엔드 DB -->
+  <h2>백엔드 실수 — PostgreSQL vs SQLite</h2>
+  <div class="card">
+    <div class="cause">
+      <strong>원인:</strong> <code>backend/.env</code>에 <code>DATABASE_URL=postgresql://...</code>이 설정되어 있었으나
+      로컬에 PostgreSQL이 설치되지 않아 백엔드 시작 자체가 불가능했습니다.
+    </div>
+    <div class="fix">
+      <strong>해결:</strong> 로컬 개발 시 SQLite 사용. <code>config.py</code>의 기본값이 이미 SQLite이므로
+      <code>.env</code>의 DATABASE_URL을 SQLite URL로 변경하면 됩니다.
+    </div>
+    <pre># backend/.env
+DATABASE_URL=sqlite:///./memolish.db   # 로컬 개발용
+# DATABASE_URL=postgresql+psycopg://user:pass@host:5432/memolish_db  # 프로덕션</pre>
+  </div>
+
+  <!-- 다음번을 위한 체크리스트 -->
+  <h2>다음 OAuth 연동 시 체크리스트</h2>
+  <div class="card">
+    <ul class="checklist">
+      <li>Next.js 환경변수는 <code>frontend/.env.local</code>에 작성</li>
+      <li>백엔드 환경변수는 <code>backend/.env</code>에 작성 (완전히 별개 파일)</li>
+      <li>카카오 콘솔에서 Redirect URI는 "카카오 로그인 → 일반 탭"에 등록</li>
+      <li>동의항목(닉네임 등) 최소 1개 이상 필수동의 설정</li>
+      <li>Client Secret 활성화 후 값을 .env.local에 복사</li>
+      <li>NEXTAUTH_URL 환경변수 반드시 포함</li>
+      <li>로컬 개발 DB는 SQLite, 프로덕션은 PostgreSQL(Neon 등)</li>
+      <li>백엔드와 프론트엔드를 각각 별도 터미널에서 실행</li>
+    </ul>
+  </div>
+
+  <footer>
+    <p>Memolish 프로젝트 트러블슈팅 기록 · 작성일: 2026-02-25</p>
+  </footer>
+
+</div>
+</body>
+</html>
