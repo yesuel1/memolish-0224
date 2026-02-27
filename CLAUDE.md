@@ -18,7 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | TTS | Google Cloud TTS (미구현, 향후 Journey 보이스) |
 | Storage | AWS S3 + presigned URL (미구현) |
 | Auth | NextAuth.js v5 — 카카오 OAuth 단독 (JWT 세션) |
-| Deploy | Frontend: Cloudflare Pages / Backend: Render.com (Python 3.12) |
+| Deploy | Frontend: Cloudflare Pages (`@opennextjs/cloudflare`) / Backend: Render.com (Python 3.12) |
 
 ## Core Architecture
 
@@ -60,24 +60,43 @@ python -m uvicorn app.main:app --reload --port 8000
 # ── 프론트엔드 ─────────────────────────────────────────────────
 cd frontend
 npm install
-cp .env.local.example .env.local   # AUTH_SECRET, AUTH_KAKAO_CLIENT_ID/SECRET 입력
+cp .env.local.example .env.local   # AUTH_SECRET, AUTH_KAKAO_CLIENT_ID/SECRET, NEXT_PUBLIC_API_BASE_URL 입력
 npm run dev   # http://localhost:3000
 
-# ── Cloudflare Pages 빌드 (CI에서 자동 실행, 로컬 Windows에서는 동작 안 함) ──
-npm run pages:build   # npx @cloudflare/next-on-pages
+# ── Cloudflare Pages 빌드 (CI에서 자동 실행, 로컬 Windows에서는 불안정) ──
+npm run pages:build   # npx @opennextjs/cloudflare build → .open-next/ 출력
+npm run pages:preview # 로컬 wrangler dev 미리보기
 ```
+
+## API Endpoints
+
+| Method | Path | 설명 |
+|--------|------|------|
+| GET | `/health` | 헬스체크 |
+| POST | `/api/memos` | 메모 생성 (시작일=오늘, 종료일=내일 자동) |
+| GET | `/api/memos` | 내 메모 목록 (최신순) |
+| PUT | `/api/memos/{id}` | 메모 내용 수정 |
+| DELETE | `/api/memos/{id}` | 메모 삭제 |
+| PATCH | `/api/memos/{id}/status` | 칸반 상태 변경 |
+| POST | `/api/memos/{id}/parse-url` | URL 메타데이터 파싱 → 메모에 저장 |
+| POST | `/api/ai/transform/{id}` | ✨ Gemini 변환 (수동 트리거 전용, 크레딧 차감) |
+| GET | `/api/ai/credits` | 잔여 크레딧 조회 |
+| POST | `/api/audio/generate/{id}` | TTS 오디오 생성 (미구현) |
+| GET | `/api/audio/download/{id}` | S3 presigned URL 반환 (미구현) |
+
+모든 엔드포인트는 `X-Session-Id` 헤더 필수.
 
 ## Deployment
 
 | 서비스 | 역할 | 설정 파일 |
 |--------|------|-----------|
 | Render.com | FastAPI 백엔드 | `backend/render.yaml` |
-| Cloudflare Pages | Next.js 프론트엔드 | `frontend/wrangler.toml` |
+| Cloudflare Pages | Next.js 프론트엔드 | `frontend/open-next.config.ts` |
 | Neon | PostgreSQL DB | `backend/.env` → `DATABASE_URL` |
 
 **Render 설정**: Root Directory=`backend`, Python 3.12 (`backend/.python-version`), Start Command=`uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
-**Cloudflare Pages 설정**: Root Directory=`frontend`, Build Command=`npx @cloudflare/next-on-pages`, Output=`.vercel/output/static`
+**Cloudflare Pages 설정**: Root Directory=`frontend`, Build Command=`npx @opennextjs/cloudflare build`, Output=`.open-next`
 
 **배포 후 필수**: Render 환경변수 `CORS_ORIGINS`를 Cloudflare Pages URL로 업데이트. 카카오 개발자 콘솔에 `https://{pages-url}/api/auth/callback/kakao` Redirect URI 추가.
 
@@ -85,10 +104,28 @@ npm run pages:build   # npx @cloudflare/next-on-pages
 
 - `backend/app/services/gemini_service.py` — Gemini 호출 (SSL 우회 로직 포함)
 - `backend/app/routers/ai.py` — 크레딧 체크 + 캐시 로직
+- `backend/app/models/memo.py` — Memo + MemoStatus 모델
+- `backend/app/models/user.py` — User 모델 (session_id, daily_credits, is_premium)
+- `backend/app/config.py` — Settings (pydantic-settings, `.env` 로드)
 - `frontend/src/lib/api.ts` — Axios 클라이언트 + X-Session-Id 인터셉터
 - `frontend/src/store/memoStore.ts` — Zustand 전역 상태 (모든 API 액션 포함)
+- `frontend/src/types/memo.ts` — TypeScript 타입 (Memo, MemoStatus, AIDialogue 등)
 - `frontend/src/auth.ts` — NextAuth.js 설정 (카카오 provider + session callback)
 - `frontend/src/app/api/auth/[...nextauth]/route.ts` — `export const runtime = 'edge'` 필수 (CF Workers)
+- `frontend/open-next.config.ts` — Cloudflare Pages 빌드 설정 (`defineCloudflareConfig`)
+
+## Environment Variables
+
+**Backend (`.env`)**:
+- `DATABASE_URL` — 로컬: `sqlite:///./memolish.db` / 프로덕션: Neon PostgreSQL URL
+- `GEMINI_API_KEY` — Google AI Studio API 키
+- `CORS_ORIGINS` — 쉼표 구분 허용 오리진 (예: `http://localhost:3000,https://memolish.pages.dev`)
+- `DAILY_FREE_CREDITS` — 일일 무료 크레딧 수 (기본값 `3`)
+
+**Frontend (`.env.local`)**:
+- `AUTH_SECRET` — NextAuth.js 세션 서명 시크릿
+- `AUTH_KAKAO_CLIENT_ID` / `AUTH_KAKAO_CLIENT_SECRET` — 카카오 개발자 콘솔
+- `NEXT_PUBLIC_API_BASE_URL` — 백엔드 URL (기본값 `http://localhost:8000`)
 
 ## Known Gotchas
 
@@ -96,9 +133,11 @@ npm run pages:build   # npx @cloudflare/next-on-pages
 
 **websockets 버전**: `google-genai==1.64.0` 은 `websockets<15.1` 을 요구. `websockets==16.x` 와 충돌하므로 `14.1` 고정.
 
-**Cloudflare Pages 로컬 빌드**: `@cloudflare/next-on-pages` 가 내부적으로 `vercel build` 를 실행하는데 Windows에서 불안정. CI (Linux) 에서만 실행.
+**Cloudflare Pages 로컬 빌드**: `@opennextjs/cloudflare` 가 내부적으로 `vercel build` 를 실행하는데 Windows에서 불안정. CI (Linux) 에서만 실행.
 
 **DB 분기**: `database.py` 는 `DATABASE_URL.startswith("sqlite")` 로 로컬/프로덕션 분기. 로컬은 SQLite, 프로덕션은 Neon PostgreSQL.
+
+**`wrangler.toml` 없음**: 루트/frontend 양쪽 모두 `wrangler.toml` 삭제됨. Cloudflare Pages는 `open-next.config.ts` + `_worker.js` 방식으로 동작.
 
 ## Development Conventions
 
