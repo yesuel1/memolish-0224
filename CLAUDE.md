@@ -66,7 +66,7 @@ npm run dev   # http://localhost:3000
 # ── 프로덕션 빌드 확인 ──────────────────────────────────────────
 cd frontend
 npm run build         # next build → .next/ 출력
-npm start             # next start -H 0.0.0.0 -p ${PORT:-3000}
+npm start             # next start
 ```
 
 ## API Endpoints
@@ -119,7 +119,7 @@ npm start             # next start -H 0.0.0.0 -p ${PORT:-3000}
 **Backend (`.env`)**:
 - `DATABASE_URL` — 로컬: `sqlite:///./memolish.db` / 프로덕션: Neon PostgreSQL URL
 - `GEMINI_API_KEY` — Google AI Studio API 키
-- `CORS_ORIGINS` — 쉼표 구분 허용 오리진 (예: `http://localhost:3000,https://memolish.pages.dev`)
+- `CORS_ORIGINS` — 쉼표 구분 허용 오리진 (예: `http://localhost:3000,https://memolish.vercel.app`)
 - `DAILY_FREE_CREDITS` — 일일 무료 크레딧 수 (기본값 `3`)
 
 **Frontend (`.env.local`)**:
