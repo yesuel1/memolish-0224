@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Memolish** — 일상 메모/할 일을 초개인화 영어 회화 스크립트와 음성으로 변환하는 하이브리드 웹 서비스.
 
-**현재 상태:** MVP 배포 진행 중. 백엔드 + 프론트엔드 모두 Render.com 구조.
+**현재 상태:** MVP 배포 진행 중. 백엔드 Render.com + 프론트엔드 Vercel 구조.
 
 ## Tech Stack
 
@@ -18,7 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | TTS | Google Cloud TTS (미구현, 향후 Journey 보이스) |
 | Storage | AWS S3 + presigned URL (미구현) |
 | Auth | NextAuth.js v5 — 카카오 OAuth 단독 (JWT 세션) |
-| Deploy | Frontend: Render.com (Node.js) / Backend: Render.com (Python 3.12) |
+| Deploy | Frontend: Vercel / Backend: Render.com (Python 3.12) |
 
 ## Core Architecture
 
@@ -92,16 +92,14 @@ npm start             # next start -H 0.0.0.0 -p ${PORT:-3000}
 | 서비스 | 역할 | 설정 파일 |
 |--------|------|-----------|
 | Render.com | FastAPI 백엔드 | `render.yaml` (루트) |
-| Render.com | Next.js 프론트엔드 | `render.yaml` (루트) |
+| Vercel | Next.js 프론트엔드 | 자동 감지 (Root Directory=`frontend`) |
 | Neon | PostgreSQL DB | `backend/.env` → `DATABASE_URL` |
 
 **백엔드 Render 설정**: Root Directory=`backend`, Python 3.12 (`backend/.python-version`), Start Command=`uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
-**프론트엔드 Render 설정**: Root Directory=`frontend`, Node.js, Build Command=`npm install && npm run build`, Start Command=`npm start`
+**프론트엔드 Vercel 설정**: GitHub 연결 → Root Directory=`frontend` → 자동 빌드/배포. 환경변수: `AUTH_SECRET`, `AUTH_KAKAO_CLIENT_ID`, `AUTH_KAKAO_CLIENT_SECRET`, `NEXT_PUBLIC_API_BASE_URL` (백엔드 Render URL)
 
-**프론트엔드 환경변수**: `AUTH_SECRET`, `AUTH_KAKAO_CLIENT_ID`, `AUTH_KAKAO_CLIENT_SECRET`, `NEXT_PUBLIC_API_BASE_URL` (백엔드 Render URL), `AUTH_TRUST_HOST=true`
-
-**배포 후 필수**: 백엔드 환경변수 `CORS_ORIGINS`를 프론트엔드 Render URL로 업데이트. 카카오 개발자 콘솔에 `https://{frontend-url}/api/auth/callback/kakao` Redirect URI 추가.
+**배포 후 필수**: 백엔드 환경변수 `CORS_ORIGINS`를 Vercel 프론트엔드 URL로 업데이트. 카카오 개발자 콘솔에 `https://{vercel-url}/api/auth/callback/kakao` Redirect URI 추가.
 
 ## Key Files
 

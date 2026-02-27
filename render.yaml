@@ -16,23 +16,3 @@ services:
         sync: false
       - key: DAILY_FREE_CREDITS
         value: "3"
-
-  # ── 프론트엔드 (Next.js) ─────────────────────────────────────
-  - type: web
-    name: memolish-web
-    env: node
-    region: singapore
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    envVars:
-      - key: AUTH_SECRET
-        sync: false
-      - key: AUTH_KAKAO_CLIENT_ID
-        sync: false
-      - key: AUTH_KAKAO_CLIENT_SECRET
-        sync: false
-      - key: NEXT_PUBLIC_API_BASE_URL
-        sync: false
-      - key: AUTH_TRUST_HOST
-        value: "true"
