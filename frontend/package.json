@@ -34,5 +34,8 @@
     "typescript": "^5",
     "vercel": "^50.23.2",
     "wrangler": "^4.68.1"
+  },
+  "optionalDependencies": {
+    "@ast-grep/napi-linux-x64-gnu": "0.40.5"
   }
 }
