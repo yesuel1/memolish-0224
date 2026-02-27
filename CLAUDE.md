@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Memolish** — 일상 메모/할 일을 초개인화 영어 회화 스크립트와 음성으로 변환하는 하이브리드 웹 서비스.
 
-**현재 상태:** MVP 배포 진행 중. 백엔드 Render.com + 프론트엔드 Cloudflare Pages 구조.
+**현재 상태:** MVP 배포 진행 중. 백엔드 + 프론트엔드 모두 Render.com 구조.
 
 ## Tech Stack
 
@@ -18,7 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | TTS | Google Cloud TTS (미구현, 향후 Journey 보이스) |
 | Storage | AWS S3 + presigned URL (미구현) |
 | Auth | NextAuth.js v5 — 카카오 OAuth 단독 (JWT 세션) |
-| Deploy | Frontend: Cloudflare Pages (`@opennextjs/cloudflare`) / Backend: Render.com (Python 3.12) |
+| Deploy | Frontend: Render.com (Node.js) / Backend: Render.com (Python 3.12) |
 
 ## Core Architecture
 
@@ -63,9 +63,10 @@ npm install
 cp .env.local.example .env.local   # AUTH_SECRET, AUTH_KAKAO_CLIENT_ID/SECRET, NEXT_PUBLIC_API_BASE_URL 입력
 npm run dev   # http://localhost:3000
 
-# ── Cloudflare Pages 빌드 (CI에서 자동 실행, 로컬 Windows에서는 불안정) ──
-npm run pages:build   # npx @opennextjs/cloudflare build → .open-next/ 출력
-npm run pages:preview # 로컬 wrangler dev 미리보기
+# ── 프로덕션 빌드 확인 ──────────────────────────────────────────
+cd frontend
+npm run build         # next build → .next/ 출력
+npm start             # next start -H 0.0.0.0 -p ${PORT:-3000}
 ```
 
 ## API Endpoints
@@ -90,15 +91,17 @@ npm run pages:preview # 로컬 wrangler dev 미리보기
 
 | 서비스 | 역할 | 설정 파일 |
 |--------|------|-----------|
-| Render.com | FastAPI 백엔드 | `backend/render.yaml` |
-| Cloudflare Pages | Next.js 프론트엔드 | `frontend/open-next.config.ts` |
+| Render.com | FastAPI 백엔드 | `render.yaml` (루트) |
+| Render.com | Next.js 프론트엔드 | `render.yaml` (루트) |
 | Neon | PostgreSQL DB | `backend/.env` → `DATABASE_URL` |
 
-**Render 설정**: Root Directory=`backend`, Python 3.12 (`backend/.python-version`), Start Command=`uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+**백엔드 Render 설정**: Root Directory=`backend`, Python 3.12 (`backend/.python-version`), Start Command=`uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
-**Cloudflare Pages 설정**: Root Directory=`frontend`, Build Command=`npx @opennextjs/cloudflare build`, Output=`.open-next`
+**프론트엔드 Render 설정**: Root Directory=`frontend`, Node.js, Build Command=`npm install && npm run build`, Start Command=`npm start`
 
-**배포 후 필수**: Render 환경변수 `CORS_ORIGINS`를 Cloudflare Pages URL로 업데이트. 카카오 개발자 콘솔에 `https://{pages-url}/api/auth/callback/kakao` Redirect URI 추가.
+**프론트엔드 환경변수**: `AUTH_SECRET`, `AUTH_KAKAO_CLIENT_ID`, `AUTH_KAKAO_CLIENT_SECRET`, `NEXT_PUBLIC_API_BASE_URL` (백엔드 Render URL), `AUTH_TRUST_HOST=true`
+
+**배포 후 필수**: 백엔드 환경변수 `CORS_ORIGINS`를 프론트엔드 Render URL로 업데이트. 카카오 개발자 콘솔에 `https://{frontend-url}/api/auth/callback/kakao` Redirect URI 추가.
 
 ## Key Files
 
@@ -111,8 +114,7 @@ npm run pages:preview # 로컬 wrangler dev 미리보기
 - `frontend/src/store/memoStore.ts` — Zustand 전역 상태 (모든 API 액션 포함)
 - `frontend/src/types/memo.ts` — TypeScript 타입 (Memo, MemoStatus, AIDialogue 등)
 - `frontend/src/auth.ts` — NextAuth.js 설정 (카카오 provider + session callback)
-- `frontend/src/app/api/auth/[...nextauth]/route.ts` — `export const runtime = 'edge'` 필수 (CF Workers)
-- `frontend/open-next.config.ts` — Cloudflare Pages 빌드 설정 (`defineCloudflareConfig`)
+- `frontend/src/app/api/auth/[...nextauth]/route.ts` — NextAuth API 라우트
 
 ## Environment Variables
 
@@ -133,11 +135,7 @@ npm run pages:preview # 로컬 wrangler dev 미리보기
 
 **websockets 버전**: `google-genai==1.64.0` 은 `websockets<15.1` 을 요구. `websockets==16.x` 와 충돌하므로 `14.1` 고정.
 
-**Cloudflare Pages 로컬 빌드**: `@opennextjs/cloudflare` 가 내부적으로 `vercel build` 를 실행하는데 Windows에서 불안정. CI (Linux) 에서만 실행.
-
 **DB 분기**: `database.py` 는 `DATABASE_URL.startswith("sqlite")` 로 로컬/프로덕션 분기. 로컬은 SQLite, 프로덕션은 Neon PostgreSQL.
-
-**`wrangler.toml` 없음**: 루트/frontend 양쪽 모두 `wrangler.toml` 삭제됨. Cloudflare Pages는 `open-next.config.ts` + `_worker.js` 방식으로 동작.
 
 ## Development Conventions
 
